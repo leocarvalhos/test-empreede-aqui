@@ -16,8 +16,8 @@ export class Account {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true, default: () => nanoid(5) })
-  number: string;
+  //   @Column({ unique: true, default: () => nanoid(5) })
+  //   number: string;
 
   @Column({ length: 500 })
   name: string;
