@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,26 +9,62 @@ import { Repository } from 'typeorm';
 export class AccountsService {
   constructor(
     @InjectRepository(Account)
-    private usersRepository: Repository<Account>,
+    private accountRepository: Repository<Account>,
   ) {}
 
-  create(createAccountDto: CreateAccountDto) {
-    return 'This action adds a new account';
+  async create(createAccountDto: CreateAccountDto) {
+    if (createAccountDto.balance < 0) {
+      throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
+    }
+    return this.accountRepository.insert(createAccountDto);
   }
 
-  findAll() {
-    return `This action returns all accounts`;
+  async findOneById(id: string) {
+    return await this.accountRepository.findOneBy({ user_id: { id } });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} account`;
+  async update(id: string, updateAccountDto: UpdateAccountDto) {
+    return await this.accountRepository.update(
+      { user_id: { id } },
+      updateAccountDto,
+    );
   }
 
-  update(id: number, updateAccountDto: UpdateAccountDto) {
-    return `This action updates a #${id} account`;
+  async withdrawal(id: string, amountObject: { amount: number }) {
+    const user = await this.accountRepository.findOneBy({ user_id: { id } });
+    const amount = amountObject.amount;
+    let { amount: balance } = user;
+    balance = Number(balance);
+
+    if (amount < 0 || balance < amount) {
+      throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
+    }
+    const newAmount = (balance -= amount);
+
+    return await this.accountRepository.update(
+      { user_id: { id } },
+      { amount: newAmount },
+    );
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} account`;
+  async deposit(id: string, amountObject: { amount: number }) {
+    const user = await this.accountRepository.findOneBy({ user_id: { id } });
+    const amount = amountObject.amount;
+    let { amount: balance } = user;
+    balance = Number(balance);
+
+    if (amount < 0) {
+      throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
+    }
+    const newAmount = (balance += amount);
+
+    return await this.accountRepository.update(
+      { user_id: { id } },
+      { amount: newAmount },
+    );
+  }
+
+  async remove(id: string) {
+    return await this.accountRepository.delete({ user_id: { id } });
   }
 }

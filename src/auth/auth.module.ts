@@ -13,7 +13,7 @@ import { AccountsModule } from 'src/accounts/accounts.module';
     forwardRef(() => AccountsModule),
     JwtModule.register({
       global: true,
-      secret: process.env.JWT_PASS,
+      secret: 'xxt',
       signOptions: {
         expiresIn: '2h',
       },

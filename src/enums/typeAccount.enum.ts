@@ -1,4 +1,4 @@
 export enum TypeAccount {
-  CurrentAccount = 'current',
-  SavingsAccount = 'savings',
+  Current = 'current',
+  Savings = 'savings',
 }
