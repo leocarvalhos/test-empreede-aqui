@@ -17,16 +17,13 @@ export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
 
   @Post('withdrawal/:id')
-  withdrawal(
-    @Param('id') id: string,
-    @Body() amountObject: { amount: number },
-  ) {
-    return this.accountsService.withdrawal(id, amountObject);
+  withdrawal(@Param('id') id: string, @Body() amount: number) {
+    return this.accountsService.withdrawal(id, amount);
   }
 
   @Post('deposit/:id')
-  deposit(@Param('id') id: string, @Body() amountObject: { amount: number }) {
-    return this.accountsService.deposit(id, amountObject);
+  deposit(@Param('id') id: string, @Body() amount: number) {
+    return this.accountsService.deposit(id, amount);
   }
 
   @Post()

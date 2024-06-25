@@ -30,28 +30,29 @@ export class AccountsService {
     );
   }
 
-  async withdrawal(id: string, amountObject: { amount: number }) {
+  async withdrawal(id: string, amount: number) {
     const user = await this.accountRepository.findOneBy({ user_id: { id } });
-    const amount = amountObject.amount;
+
     let { amount: balance } = user;
     balance = Number(balance);
+    amount = amount['amount'];
 
     if (amount < 0 || balance < amount) {
       throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
     }
     const newAmount = (balance -= amount);
-
     return await this.accountRepository.update(
       { user_id: { id } },
       { amount: newAmount },
     );
   }
 
-  async deposit(id: string, amountObject: { amount: number }) {
+  async deposit(id: string, amount: number) {
     const user = await this.accountRepository.findOneBy({ user_id: { id } });
-    const amount = amountObject.amount;
+
     let { amount: balance } = user;
     balance = Number(balance);
+    amount = amount['amount'];
 
     if (amount < 0) {
       throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
