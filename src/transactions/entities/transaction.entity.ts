@@ -13,19 +13,19 @@ export class Transaction {
   id: string;
 
   @Column()
-  value: number;
+  amount: number;
 
-  @Column()
+  @Column({ nullable: true })
   payment_voucher: string;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   transaction_date: Date;
 
   @ManyToOne(() => Account, (account) => account.sender_account)
-  @JoinColumn({ name: 'sender_account_id' })
+  @JoinColumn({ name: 'sender_account' })
   sender_account: Account;
 
   @ManyToOne(() => Account, (account) => account.receiver_account)
-  @JoinColumn({ name: 'receiver_account_id' })
+  @JoinColumn({ name: 'receiver_account' })
   receiver_account: Account;
 }

@@ -20,7 +20,14 @@ export class AccountsService {
   }
 
   async findOneById(id: string) {
-    return await this.accountRepository.findOneBy({ user_id: { id } });
+    return await this.accountRepository.findOneBy({ id });
+  }
+
+  async findOneByNumber(number: number) {
+    return await this.accountRepository.findOne({
+      where: { number },
+      relations: { user_id: true },
+    });
   }
 
   async update(id: string, updateAccountDto: UpdateAccountDto) {
@@ -31,28 +38,24 @@ export class AccountsService {
   }
 
   async withdrawal(id: string, amount: number) {
-    const user = await this.accountRepository.findOneBy({ user_id: { id } });
+    const account = await this.accountRepository.findOneBy({ id });
 
-    let { amount: balance } = user;
+    let { amount: balance } = account;
     balance = Number(balance);
-    amount = amount['amount'];
 
     if (amount < 0 || balance < amount) {
       throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
     }
     const newAmount = (balance -= amount);
-    return await this.accountRepository.update(
-      { user_id: { id } },
-      { amount: newAmount },
-    );
+
+    return await this.accountRepository.update(id, { amount: newAmount });
   }
 
-  async deposit(id: string, amount: number) {
-    const user = await this.accountRepository.findOneBy({ user_id: { id } });
+  async deposit(number: number, amount: number) {
+    const account = await this.accountRepository.findOneBy({ number });
 
-    let { amount: balance } = user;
+    let { amount: balance } = account;
     balance = Number(balance);
-    amount = amount['amount'];
 
     if (amount < 0) {
       throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
@@ -60,7 +63,7 @@ export class AccountsService {
     const newAmount = (balance += amount);
 
     return await this.accountRepository.update(
-      { user_id: { id } },
+      { number },
       { amount: newAmount },
     );
   }

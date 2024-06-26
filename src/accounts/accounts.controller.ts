@@ -5,8 +5,6 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
-  Put,
   UseGuards,
 } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
@@ -19,15 +17,15 @@ export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
 
   @UseGuards(AuthGuard)
-  @Post('withdrawal/:id')
+  @Post(':id/withdrawal')
   withdrawal(@Param('id') id: string, @Body() amount: number) {
     return this.accountsService.withdrawal(id, amount);
   }
 
   @UseGuards(AuthGuard)
-  @Post('deposit/:id')
-  deposit(@Param('id') id: string, @Body() amount: number) {
-    return this.accountsService.deposit(id, amount);
+  @Post('deposit')
+  deposit(@Body() number: number, amount: number) {
+    return this.accountsService.deposit(number, amount);
   }
 
   @UseGuards(AuthGuard)
@@ -46,11 +44,5 @@ export class AccountsController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateAccountDto: UpdateAccountDto) {
     return this.accountsService.update(id, updateAccountDto);
-  }
-
-  @UseGuards(AuthGuard)
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.accountsService.remove(id);
   }
 }
