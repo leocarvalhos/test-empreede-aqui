@@ -24,8 +24,8 @@ export class Account {
   @Column({ type: 'enum', enum: TypeAccount })
   type: string;
 
-  @Column({ type: 'decimal' })
-  amount: number;
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  balance: number;
 
   @OneToOne(() => User, (user) => user.id)
   @JoinColumn({ name: 'user_id' })

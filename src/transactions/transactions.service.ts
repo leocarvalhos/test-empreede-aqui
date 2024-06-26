@@ -1,11 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Transaction } from './entities/transaction.entity';
-import { Repository } from 'typeorm';
 import { AccountsService } from 'src/accounts/accounts.service';
 import { uploadFile } from 'src/aws/aws-sdk';
+import { Repository } from 'typeorm';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { Transaction } from './entities/transaction.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -20,30 +19,28 @@ export class TransactionsService {
       createTransactionDto.sender_account,
     );
 
+    if (!sender_account)
+      throw new NotFoundException("Sender's account not found");
+
     const receiver_account = await this.accountsService.findOneByNumber(
       createTransactionDto.receiver_account,
     );
 
-    if (
-      Number(sender_account.amount) < Number(createTransactionDto.amount) ||
-      Number(createTransactionDto.amount) < 0 ||
-      !receiver_account
-    ) {
-      throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
-    }
+    if (!receiver_account)
+      throw new NotFoundException('Account of the recipient not found');
 
     await this.accountsService.withdrawal(
       sender_account.id,
-      Number(createTransactionDto.amount),
+      createTransactionDto.amount,
     );
 
-    await this.accountsService.deposit(
-      receiver_account.number,
-      Number(createTransactionDto.amount),
-    );
+    await this.accountsService.deposit({
+      number: receiver_account.number,
+      amount: createTransactionDto.amount,
+    });
 
     const transaction = {
-      amount: Number(createTransactionDto.amount),
+      amount: createTransactionDto.amount,
       sender_account: { id: sender_account.id },
       receiver_account: { id: receiver_account.id },
     };

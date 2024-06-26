@@ -1,18 +1,19 @@
-import { IsDecimal, IsEnum, IsString } from 'class-validator';
+import { IsEnum, IsNumber, IsString, Min } from 'class-validator';
 import { TypeAccount } from 'src/enums/typeAccount.enum';
 import { User } from 'src/users/entities/user.entity';
 import { DeepPartial } from 'typeorm';
 
 export class CreateAccountDto {
-  @IsString()
+  @IsString({ message: 'Name is required' })
   name: string;
 
-  @IsDecimal()
+  @IsNumber({}, { message: 'Balance is required' })
+  @Min(0, { message: 'The value cannot be less than 0' })
   balance: number;
 
-  @IsEnum(TypeAccount)
+  @IsEnum(TypeAccount, { message: 'Incorrect account type' })
   type: TypeAccount;
 
-  @IsString()
+  @IsString({ message: 'User ID is required' })
   user_id: DeepPartial<User>;
 }

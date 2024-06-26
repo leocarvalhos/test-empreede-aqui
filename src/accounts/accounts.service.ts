@@ -1,9 +1,15 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Account } from './entities/account.entity';
-import { Repository } from 'typeorm';
+import { DepositDto } from './dto/deposit.dto';
 
 @Injectable()
 export class AccountsService {
@@ -13,14 +19,13 @@ export class AccountsService {
   ) {}
 
   async create(createAccountDto: CreateAccountDto) {
-    if (createAccountDto.balance < 0) {
-      throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
-    }
     return this.accountRepository.insert(createAccountDto);
   }
 
   async findOneById(id: string) {
-    return await this.accountRepository.findOneBy({ id });
+    const account = await this.accountRepository.findOneBy({ id });
+    if (!account) throw new NotFoundException('Account not found!');
+    return account;
   }
 
   async findOneByNumber(number: number) {
@@ -31,40 +36,38 @@ export class AccountsService {
   }
 
   async update(id: string, updateAccountDto: UpdateAccountDto) {
-    return await this.accountRepository.update(
-      { user_id: { id } },
-      updateAccountDto,
-    );
+    const account = await this.accountRepository.update(id, updateAccountDto);
+    if (!account) throw new NotFoundException('Account not found!');
+    return account;
   }
 
   async withdrawal(id: string, amount: number) {
     const account = await this.accountRepository.findOneBy({ id });
-
-    let { amount: balance } = account;
-    balance = Number(balance);
-
+    if (!account) throw new NotFoundException('Account not found!');
+    let { balance } = account;
     if (amount < 0 || balance < amount) {
-      throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
+      throw new BadRequestException();
     }
-    const newAmount = (balance -= amount);
-
-    return await this.accountRepository.update(id, { amount: newAmount });
+    return await this.accountRepository.update(id, {
+      balance: (balance -= amount),
+    });
   }
 
-  async deposit(number: number, amount: number) {
-    const account = await this.accountRepository.findOneBy({ number });
+  async deposit(depositDto: DepositDto) {
+    const { amount, number } = depositDto;
 
-    let { amount: balance } = account;
-    balance = Number(balance);
+    const account = await this.accountRepository.findOneBy({ number });
+    if (!account) throw new NotFoundException('Account not found!');
+
+    let { balance } = account;
 
     if (amount < 0) {
-      throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
+      throw new BadRequestException('');
     }
-    const newAmount = (balance += amount);
 
     return await this.accountRepository.update(
       { number },
-      { amount: newAmount },
+      { balance: (balance += amount) },
     );
   }
 

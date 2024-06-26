@@ -11,6 +11,7 @@ import { AccountsService } from './accounts.service';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { DepositDto } from './dto/deposit.dto';
 
 @Controller('accounts')
 export class AccountsController {
@@ -18,14 +19,14 @@ export class AccountsController {
 
   @UseGuards(AuthGuard)
   @Post(':id/withdrawal')
-  withdrawal(@Param('id') id: string, @Body() amount: number) {
+  withdrawal(@Param('id') id: string, @Body('amount') amount: number) {
     return this.accountsService.withdrawal(id, amount);
   }
 
   @UseGuards(AuthGuard)
   @Post('deposit')
-  deposit(@Body() number: number, amount: number) {
-    return this.accountsService.deposit(number, amount);
+  deposit(@Body() depositDto: DepositDto) {
+    return this.accountsService.deposit(depositDto);
   }
 
   @UseGuards(AuthGuard)

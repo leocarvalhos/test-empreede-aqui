@@ -3,6 +3,6 @@ import { CreateAccountDto } from './create-account.dto';
 import { IsString } from 'class-validator';
 
 export class UpdateAccountDto extends PartialType(CreateAccountDto) {
-  @IsString()
+  @IsString({ message: 'Name is required' })
   name: string;
 }
