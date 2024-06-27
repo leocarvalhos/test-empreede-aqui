@@ -5,6 +5,6 @@ export class DepositDto {
   number: number;
 
   @IsNumber({}, { message: 'Balance is required' })
-  @Min(0, { message: 'The value cannot be less than 0' })
+  @Min(0, { message: 'Insufficient value' })
   amount: number;
 }

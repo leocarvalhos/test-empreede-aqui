@@ -1,15 +1,15 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateAccountDto } from './dto/create-account.dto';
+import { DepositDto } from './dto/deposit.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { Account } from './entities/account.entity';
-import { DepositDto } from './dto/deposit.dto';
+import { Transactional } from 'typeorm-transactional';
 
 @Injectable()
 export class AccountsService {
@@ -29,10 +29,13 @@ export class AccountsService {
   }
 
   async findOneByNumber(number: number) {
-    return await this.accountRepository.findOne({
+    const account = await this.accountRepository.findOne({
       where: { number },
       relations: { user_id: true },
     });
+    if (!account) throw new NotFoundException('Account not found!');
+
+    return account;
   }
 
   async update(id: string, updateAccountDto: UpdateAccountDto) {
@@ -41,33 +44,29 @@ export class AccountsService {
     return account;
   }
 
+  @Transactional()
   async withdrawal(id: string, amount: number) {
     const account = await this.accountRepository.findOneBy({ id });
     if (!account) throw new NotFoundException('Account not found!');
-    let { balance } = account;
-    if (amount < 0 || balance < amount) {
-      throw new BadRequestException();
+
+    if (account.balance < amount) {
+      throw new BadRequestException('Insufficient funds');
     }
     return await this.accountRepository.update(id, {
-      balance: (balance -= amount),
+      balance: (account.balance -= amount),
     });
   }
 
+  @Transactional()
   async deposit(depositDto: DepositDto) {
     const { amount, number } = depositDto;
 
     const account = await this.accountRepository.findOneBy({ number });
     if (!account) throw new NotFoundException('Account not found!');
 
-    let { balance } = account;
-
-    if (amount < 0) {
-      throw new BadRequestException('');
-    }
-
     return await this.accountRepository.update(
       { number },
-      { balance: (balance += amount) },
+      { balance: (account.balance += amount) },
     );
   }
 

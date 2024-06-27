@@ -15,7 +15,7 @@ export class Account {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ default: randomNumber })
+  @Column({ default: randomNumber, unique: true })
   number: number;
 
   @Column({ length: 500 })

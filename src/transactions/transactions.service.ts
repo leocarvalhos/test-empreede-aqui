@@ -1,19 +1,26 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AccountsService } from 'src/accounts/accounts.service';
 import { uploadFile } from 'src/aws/aws-sdk';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
+import { Transactional } from 'typeorm-transactional';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { DateRangeDto } from './dto/date-range.dto';
 import { Transaction } from './entities/transaction.entity';
 
 @Injectable()
 export class TransactionsService {
   constructor(
     @InjectRepository(Transaction)
-    private transcationsRepository: Repository<Transaction>,
+    private transactionsRepository: Repository<Transaction>,
     private accountsService: AccountsService,
   ) {}
 
+  @Transactional()
   async create(createTransactionDto: CreateTransactionDto) {
     const sender_account = await this.accountsService.findOneByNumber(
       createTransactionDto.sender_account,
@@ -29,22 +36,24 @@ export class TransactionsService {
     if (!receiver_account)
       throw new NotFoundException('Account of the recipient not found');
 
+    if (sender_account.balance < createTransactionDto.amount) {
+      throw new BadRequestException('Insufficient funds.');
+    }
     await this.accountsService.withdrawal(
       sender_account.id,
       createTransactionDto.amount,
     );
 
     await this.accountsService.deposit({
-      number: receiver_account.number,
       amount: createTransactionDto.amount,
+      number: createTransactionDto.receiver_account,
     });
 
-    const transaction = {
+    return await this.transactionsRepository.save({
       amount: createTransactionDto.amount,
       sender_account: { id: sender_account.id },
       receiver_account: { id: receiver_account.id },
-    };
-    return await this.transcationsRepository.insert(transaction);
+    });
   }
 
   async uploadFile(id: string, file: Express.Multer.File) {
@@ -53,13 +62,43 @@ export class TransactionsService {
       file.buffer,
       file.mimetype,
     );
-    await this.transcationsRepository.update(id, {
+    await this.transactionsRepository.update(id, {
       payment_voucher: vouncher.url,
     });
 
     return vouncher;
   }
-  findAll() {
-    return `This action returns all transactions`;
+  async extract(id: string, dateRange?: DateRangeDto) {
+    const { startDate, endDate } = dateRange;
+
+    const queryBuilder =
+      this.transactionsRepository.createQueryBuilder('transaction');
+
+    queryBuilder
+      .select('transaction')
+      .addSelect('SUM(transaction.amount)', 'totalAmount')
+      .where('transaction.sender_account = :id', { id });
+
+    if (startDate && endDate) {
+      queryBuilder.andWhere(
+        'transaction.transaction_date BETWEEN :startDate AND :endDate',
+        { startDate, endDate },
+      );
+    }
+
+    queryBuilder.groupBy('transaction.id');
+
+    const result = await queryBuilder.getRawMany();
+
+    if (!result.length) {
+      throw new NotFoundException(
+        `No transactions found for sender_account: ${id}`,
+      );
+    }
+
+    return {
+      transactions: result,
+      totalAmount: parseFloat(result[0].totalAmount),
+    };
   }
 }

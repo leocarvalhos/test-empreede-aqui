@@ -5,10 +5,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Transaction } from './entities/transaction.entity';
 import { AuthModule } from 'src/auth/auth.module';
 import { AccountsModule } from 'src/accounts/accounts.module';
+import { Account } from 'src/accounts/entities/account.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Transaction]),
+    TypeOrmModule.forFeature([Transaction, Account]),
     forwardRef(() => AuthModule),
     forwardRef(() => AccountsModule),
   ],

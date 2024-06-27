@@ -1,22 +1,25 @@
 import {
+  Body,
   Controller,
   Get,
-  Post,
-  Body,
-  Patch,
   Param,
-  Delete,
+  Post,
+  Query,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { TransactionsService } from './transactions.service';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { TransactionsService } from './transactions.service';
+import { AuthGuard } from 'src/auth/auth.guard';
+import { DateRangeDto } from './dto/date-range.dto';
 
 @Controller('transactions')
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
+
+  @UseGuards(AuthGuard)
   @Post(':id/upload')
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(
@@ -26,13 +29,17 @@ export class TransactionsController {
     return this.transactionsService.uploadFile(id, file);
   }
 
+  @UseGuards(AuthGuard)
   @Post(':id/transfer')
   create(@Body() createTransactionDto: CreateTransactionDto) {
     return this.transactionsService.create(createTransactionDto);
   }
-
-  @Get()
-  findAll() {
-    return this.transactionsService.findAll();
+  @UseGuards(AuthGuard)
+  @Get(':accountNumber')
+  extract(
+    @Param('accountNumber') id: string,
+    @Query() dateRange?: DateRangeDto,
+  ) {
+    return this.transactionsService.extract(id, dateRange);
   }
 }
